@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Starforge</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0b0d24;--card:#171b40;--ink:#e9ecff;--mute:#9aa3d6;--accent:#ffb347;--line:#2e3578;--ok:#7be0c3;--hi:#8be9ff;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Space Grotesk',system-ui,sans-serif;line-height:1.4}
+h1{font-size:2.2rem;font-weight:700;margin:0;letter-spacing:-.02em}
+h2{font-size:1.1rem;margin:0}
+.sub{color:var(--mute);margin:2px 0 12px}
+button{font-family:inherit}
+button:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.list{display:grid;gap:8px}
+.item{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 14px;color:var(--ink);font:inherit;cursor:pointer}
+.item[disabled]{opacity:.5;cursor:not-allowed}
+.item:not([disabled]):hover{border-color:var(--hi)}
+.item b{display:block}.item small{color:var(--mute)}
+.cost{font-weight:600;color:var(--ok);white-space:nowrap}
+.x{background:none;border:1px solid var(--line);border-radius:8px;color:var(--mute);padding:6px 10px;font:inherit;cursor:pointer}
+.sr{position:absolute;left:-9999px}
+/* scene */
+#scene{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;background:radial-gradient(ellipse at 20% 28%,#5a2fa355,transparent 55%),radial-gradient(ellipse at 62% 58%,#1b6aa855,transparent 50%),linear-gradient(#04051a,#0d0f35 55%,#2a1646 100%);transition:filter 1.5s}
+.st{position:absolute;border-radius:50%;background:#fff;opacity:.9;animation:tw 3s ease-in-out infinite;z-index:0}
+@keyframes tw{50%{opacity:.25}}
+.comet{position:absolute;top:var(--t);left:-240px;width:140px;height:2px;background:linear-gradient(90deg,transparent,#fff);border-radius:2px;transform:rotate(14deg);animation:cm var(--sp) linear infinite;animation-delay:var(--dl);z-index:0;box-shadow:0 0 6px #fff8}
+@keyframes cm{to{transform:translateX(calc(100vw + 480px)) translateY(180px) rotate(14deg)}}
+.giant{position:absolute;left:-9vmin;bottom:calc(var(--bh,96px) + 40px);width:46vmin;height:46vmin;border-radius:50%;z-index:1;background:radial-gradient(circle at 30% 30%,transparent 30%,#00000088 100%),repeating-linear-gradient(172deg,#e0b27a 0 9%,#c98a52 9% 17%,#f0d1a0 17% 26%,#b87444 26% 31%);box-shadow:0 0 50px #e0b27a33}
+.giant::after{content:"";position:absolute;left:-30%;right:-30%;top:42%;height:16%;border:5px solid #e8d3a8aa;border-radius:50%;transform:rotate(-12deg)}
+.basin{position:absolute;left:0;right:0;bottom:0;height:calc(var(--bh,96px) + 34px);z-index:1;background:radial-gradient(ellipse 120px 14px at 18% 38%,#00000044,transparent),radial-gradient(ellipse 90px 10px at 52% 56%,#00000044,transparent),radial-gradient(ellipse 150px 16px at 82% 44%,#00000044,transparent),linear-gradient(#7d6ba3,#4b3d78 35%,#211a42);box-shadow:0 -8px 40px #8e6bff55;border-top:2px solid #b49cff}
+.net{position:absolute;z-index:2;bottom:calc(var(--bh,96px) + 10px);height:30px;border:2px solid #cfe8ff;border-top-width:3px;border-radius:0 0 50% 50%/0 0 100% 100%;background:radial-gradient(ellipse at 50% 0,#bff3ff99,#5163c9aa 70%),repeating-linear-gradient(90deg,#ffffff44 0 2px,transparent 2px 10px);transition:left .4s,width .4s;box-shadow:0 0 18px #7fdcff88}
+.net.dbl{height:46px;border-width:3px}
+.net.fine{border-color:#ffd34d;box-shadow:0 0 22px #ffd34daa}
+#fall{position:absolute;inset:0;z-index:3}
+.pl{position:absolute;width:14px;height:14px;margin:-7px 0 0 -7px;animation:fx 1s linear forwards}
+.pl i{display:block;width:100%;height:100%;border-radius:50%;background:radial-gradient(circle,#fff 0,#a8ecff 35%,#5ec3ff66 65%,transparent 72%);animation:fy 1s cubic-bezier(.5,0,1,1) forwards}
+.rich .pl{width:22px;height:22px;margin:-11px 0 0 -11px}
+@keyframes fx{to{transform:translateX(var(--dx))}}
+@keyframes fy{to{transform:translateY(var(--dy))}}
+/* the star, on the right */
+#star{position:fixed;right:0;top:6%;bottom:0;width:clamp(190px,30vw,300px);z-index:5;border:0;padding:0;overflow:hidden;cursor:pointer;color:#fff;text-shadow:0 1px 8px #5a1200cc;background:none}
+#star:active{filter:brightness(1.1)}
+.sun{position:absolute;border-radius:50%;background:radial-gradient(circle at 22% 50%,var(--c0,#fffbe0) 0,var(--c1,#ffe27a) 22%,var(--c2,#ffa12b) 55%,var(--c3,#e2491f) 85%,var(--c4,#a8240f) 100%);box-shadow:0 0 70px 26px var(--g,#ff9a3a88);animation:pulse 5s ease-in-out infinite;transition:width .7s,height .7s,left .7s,top .7s,filter .5s}
+@keyframes pulse{50%{box-shadow:0 0 90px 36px var(--g2,#ffb04dbb)}}
+.sun::after{content:"";display:none;position:absolute;left:-14%;right:-14%;top:38%;bottom:38%;border:4px solid #fff8;border-radius:50%;animation:ringp 8s linear infinite}
+.hasturb .sun::after{display:block}
+@keyframes ringp{to{transform:rotate(360deg)}}
+.flood .sun{filter:brightness(1.7)}
+.vent{position:absolute;width:10px;height:10px;border-radius:50%;background:#fff;box-shadow:0 0 14px 6px #ffe9a8aa;transition:left .7s,top .7s,transform .5s}
+.gx,.gm{display:none}.spill .gx{display:block}.mega .gm{display:block}
+.flood .vent{transform:scale(3.2)}
+#star .t{position:absolute;right:4%;top:50%;transform:translateY(-50%);width:48%;text-align:center;z-index:2;display:grid;gap:3px}
+.t b{font-size:.95rem;font-weight:700;line-height:1.15}.t .pp{font-size:.88rem}.t small{font-size:.76rem;line-height:1.2}
+@media(max-width:700px){#star{bottom:var(--bh,96px)}}
+/* tabs, drawer, bars, hud */
+#tabs{position:fixed;left:10px;top:calc(10px + env(safe-area-inset-top,0px));z-index:35;display:flex;flex-direction:column;gap:6px}
+.tab{min-width:150px;padding:10px 16px;text-align:left;background:var(--card);border:2px solid var(--line);border-radius:14px;color:var(--ink);font:600 1.05rem 'Space Grotesk',system-ui,sans-serif;cursor:pointer;box-shadow:0 2px 10px #0006}
+.tab:hover{border-color:var(--hi)}
+#drawer{position:fixed;left:10px;top:calc(286px + env(safe-area-inset-top,0px));bottom:calc(var(--bh,96px) + 12px);width:min(340px,calc(100vw - 180px));min-width:250px;z-index:36;background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:14px;overflow:auto;transform:translateX(-115%);visibility:hidden;transition:transform .3s,visibility 0s .3s}
+#drawer.open{transform:none;visibility:visible;transition:transform .3s}
+.dh{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.item.up{background:linear-gradient(90deg,#7be0c344 var(--p,0%),var(--card) var(--p,0%));border-width:2px}
+.item.up:not([disabled]){border-color:var(--ok)}.item.up[disabled]{opacity:.85}
+#bars{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(12px + env(safe-area-inset-bottom,0px));width:min(760px,calc(100vw - 20px));display:flex;flex-wrap:wrap;justify-content:center;gap:6px;z-index:70}
+.bar{flex:1 1 112px;max-width:180px;min-width:0;background:#171b40ee;border:2px solid var(--line);border-radius:12px;padding:6px 9px}
+.bn{font-size:.8rem;color:var(--mute)}.bv{font-size:1.2rem;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.2}.bs{font-size:.75rem;color:var(--mute)}
+.m{height:5px;border-radius:3px;background:var(--line);margin-top:6px;overflow:hidden}.m i{display:block;height:100%;width:0;background:var(--hi);transition:width .2s}
+#hud{position:fixed;top:calc(12px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:20;text-align:center;pointer-events:none;color:#fff;text-shadow:0 2px 10px #000a}
+.hn{font-size:2.8rem;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}.hs{font-size:1rem;font-weight:600}
+.hh{font-size:.95rem;font-weight:600;margin-top:2px;color:#cfd6ff}
+@media(max-width:700px){#hud{display:none}}
+#toasts{position:fixed;left:50%;top:116px;transform:translateX(-50%);z-index:90;display:grid;gap:6px;pointer-events:none;width:min(420px,92vw)}
+.toast{background:#101436f2;border:1px solid var(--hi);color:#fff;border-radius:12px;padding:10px 14px;font-weight:600;box-shadow:0 4px 14px #0007;animation:tin .25s ease-out}
+@keyframes tin{from{opacity:0;transform:translateY(-8px)}}
+.gold{position:fixed;left:-90px;width:72px;height:42px;border:0;padding:0;background:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 24'><defs><linearGradient id='t' x1='0' x2='1'><stop offset='0' stop-color='%23ffd34d' stop-opacity='0'/><stop offset='1' stop-color='%23ffd34d'/></linearGradient></defs><path d='M0 12L26 7V17Z' fill='url(%23t)'/><circle cx='30' cy='12' r='7' fill='%23ffe27a'/><circle cx='30' cy='12' r='4' fill='%23fff8d0'/></svg>") center/contain no-repeat;z-index:30;cursor:pointer;animation:swim 11s linear forwards;filter:drop-shadow(0 0 10px #ffd34d)}
+@keyframes swim{to{transform:translateX(calc(100vw + 180px))}}
+/* big bang rush: a nova sweeps from the star across the screen */
+#rush{position:fixed;inset:0;z-index:55;pointer-events:none;background:linear-gradient(270deg,#fff7c9,#ffb347 45%,#ff5a2a);transform:translateX(105%)}
+#rush::after{content:"";position:absolute;top:0;bottom:0;left:-80px;width:80px;background:linear-gradient(90deg,#fff0,#fff8c8aa)}
+#rush.on{transform:none;transition:transform .8s cubic-bezier(.5,0,.3,1)}
+#rush.out{transform:translateX(-125%);transition:transform .8s cubic-bezier(.6,0,.4,1)}
+/* layers panel */
+#shop{position:fixed;inset:0;z-index:50;overflow:auto;color:#fff;background:radial-gradient(ellipse at 80% 10%,#6a3fd055,transparent 50%),linear-gradient(#241766,#10103a 45%,#070818);padding:calc(28px + env(safe-area-inset-top,0px)) 16px 150px 16px;clip-path:circle(0px at var(--x,50%) var(--y,50%));visibility:hidden;transition:clip-path .9s cubic-bezier(.6,0,.3,1),visibility 0s .9s}
+#shop.open{clip-path:circle(150vmax at var(--x,50%) var(--y,50%));visibility:visible;transition:clip-path .9s cubic-bezier(.6,0,.3,1),visibility 0s}
+.shopin{max-width:760px;margin:0 auto;opacity:0;transition:opacity .2s}
+#shop.open .shopin{opacity:1;transition:opacity .5s .7s}
+.spp{font-size:3rem;font-weight:700;line-height:1.1;margin-top:12px}
+.sb{color:#bcc6ff;margin:4px 0 20px}
+#shop .item{background:#ffffff14;border-color:#ffffff33;color:#fff}
+#shop .item small{color:#bcc6ff}#shop .cost{color:var(--hi)}
+#shop .item:not([disabled]):hover{border-color:var(--hi)}
+.lt{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.lt button{background:#ffffff14;border:2px solid #ffffff33;color:#fff;border-radius:10px;padding:8px 12px;font:600 .95rem 'Space Grotesk',system-ui,sans-serif;cursor:pointer}
+.lt button.on{background:var(--hi);color:#07102a;border-color:var(--hi)}
+#lname{margin:0}
+#lreset{margin-top:10px;justify-content:center;font-weight:700}
+.treewrap{overflow-x:auto;padding:4px 0 12px}
+#tree{position:relative;margin:0 auto}
+#tree svg{position:absolute;left:0;top:0;pointer-events:none;overflow:visible}
+.tn{position:absolute;width:170px;display:grid;gap:4px;text-align:left;align-content:start;padding:10px 12px;border:2px solid #ffffff44;border-radius:12px;background:#0d1140cc;color:#fff;cursor:pointer;font:inherit}
+.tn b{font-size:1rem}.tn small{color:#bcc6ff;line-height:1.25}.tn .cost{color:var(--hi);font-weight:700}
+.tn[disabled]{opacity:.6;cursor:not-allowed}
+.tn:not([disabled]):not(.own):hover{border-color:var(--hi);transform:translateY(-1px)}
+.tn:not([disabled]):not(.own){border-color:var(--hi)}
+.tn.own{background:#2b5fa599;border-color:var(--hi);cursor:default;opacity:1}
+/* dialogs */
+dialog{background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:16px;padding:20px;width:min(340px,90vw);font-family:inherit}
+dialog::backdrop{background:#02030faa}
+dialog.wide{width:min(640px,94vw);max-height:84vh;overflow:auto}
+dialog .list{margin-top:12px}dialog .item{justify-content:center;font-weight:600}
+.achg{display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));margin-top:12px}
+.ac{border:2px solid var(--line);border-radius:10px;padding:8px 10px;opacity:.55}.ac b{display:block}.ac small{color:var(--mute)}
+.ac.on{opacity:1;border-color:var(--ok)}
+.stats{display:grid;grid-template-columns:1fr auto;gap:4px 16px;font-size:.92rem;margin-top:8px}
+textarea{width:100%;height:64px;font:.72rem monospace;border:1px solid var(--line);border-radius:8px;padding:6px;background:var(--bg);color:var(--ink);margin-top:10px}
+#msg{color:var(--ok);min-height:1.4em;margin:12px 0 0}
+#reset{color:var(--accent)}
+#god p{margin:10px 0 0}
+@media(prefers-reduced-motion:reduce){.st,.comet,.sun,.sun::after,.toast{animation:none}.gold{animation:none;left:42%}#rush,#rush.on,#rush.out,#shop,#shop.open,.shopin,#shop.open .shopin,#drawer,.vent,.sun{transition:none}}
+</style>
+</head>
+<body>
+<h1 class="sr">Starforge</h1>
+<div id="scene"><i class="comet" style="--t:9%;--sp:70s;--dl:-20s"></i><i class="comet" style="--t:22%;--sp:95s;--dl:-60s"></i><i class="comet" style="--t:5%;--sp:120s;--dl:-100s"></i><span class="giant"></span><div class="basin"></div><span class="net" id="net"></span><div id="fall"></div></div>
+<div id="tabs"><button class="tab" id="utab">Upgrades <span id="ubadge"></span></button><button class="tab" id="ltab">Layers</button><button class="tab" id="atab">Trophies</button><button class="tab" id="settings">Settings</button><button class="tab" id="stab">Store</button></div>
+<aside id="drawer" aria-label="Upgrades">
+ <div class="dh"><h2>Upgrades</h2><button class="x" id="uclose">Close</button></div>
+ <p class="sub" id="catchinfo"></p>
+ <div class="list" id="ups"></div>
+</aside>
+<button id="star" aria-label="The star: click to form an asteroid belt">
+ <span class="sun" id="sun"></span>
+ <span class="vent"></span><span class="vent"></span><span class="vent gx"></span><span class="vent gx"></span><span class="vent gm"></span><span class="vent gm"></span>
+ <span class="t"><b>The star emits stardust</b><span class="pp" id="ppl">Asteroids: <span id="pp">0</span></span><small id="gain"></small></span>
+</button>
+<div id="hud"><div class="hn" id="hn">0</div><div class="hs" id="hs"></div><div class="hh" id="hh"></div></div>
+<aside id="bars" aria-label="Currencies"></aside>
+<div id="toasts" aria-live="polite"></div>
+<div id="rush"></div>
+<div id="shop" role="dialog" aria-label="Layers"><div class="shopin">
+ <div class="lt" id="ltabs"></div>
+ <h1 id="lname"></h1>
+ <div class="spp"><span id="lamt">0</span> <span id="lunit" style="font-size:1.3rem;font-weight:600"></span></div>
+ <p class="sb" id="lboost"></p>
+ <button class="item" id="lreset"></button>
+ <div class="treewrap" id="treewrap"><div id="tree"></div></div>
+ <button class="item" id="surface" style="margin-top:20px;justify-content:center;font-weight:600">Return to the star</button>
+</div></div>
+<dialog id="achd" class="wide">
+ <h2>Trophies</h2>
+ <p class="sub" id="achsum"></p>
+ <div class="achg" id="achg"></div>
+ <h2 style="margin-top:18px">Stats</h2>
+ <div class="stats" id="stats"></div>
+ <div class="list" style="margin-top:14px"><button class="item" id="aclose">Close</button></div>
+</dialog>
+<dialog id="store">
+ <h2>Store</h2>
+ <p class="sub">Support the game and speed things up. Purchases are permanent.</p>
+ <div class="list" id="sitems"></div>
+ <div class="list" style="margin-top:12px"><button class="item" id="sclose">Close</button></div>
+ <p class="sub" id="smsg" style="margin-top:12px"></p>
+</dialog>
+<dialog id="pay">
+ <h2>The universe is not finished</h2>
+ <p class="sub">You have triggered three Big Bangs. That is as far as the free game goes.</p>
+ <p>The Infinite Cosmos unlocks unlimited Big Bangs, and each one doubles every currency again. It is a one-time purchase and yours forever.</p>
+ <div class="list"><button class="item" id="paybuy"></button><button class="item" id="payno">Not now</button></div>
+ <p class="sub" id="paymsg" style="margin-top:12px"></p>
+</dialog>
+<dialog id="dlg">
+ <h2>Settings</h2>
+ <p class="sub">Your game saves automatically every 30 seconds.</p>
+ <div class="list">
+  <button class="item" id="save">Save now</button>
+  <button class="item" id="autob">Automation: on</button>
+  <button class="item" id="godb">God mode: off</button>
+  <button class="item" id="godopen" style="display:none">Open the god panel</button>
+  <button class="item" id="export">Export save</button>
+  <button class="item" id="import">Import save</button>
+ </div>
+ <textarea id="box" aria-label="Save text" placeholder="Exported save text appears here. Paste a save here to import it."></textarea>
+ <div class="list" style="margin-top:12px">
+  <button class="item" id="reset">Reset all progress</button>
+  <button class="item" id="close">Close</button>
+ </div>
+ <p id="msg" role="status"></p>
+</dialog>
+<dialog id="god">
+ <h2>God panel</h2>
+ <p class="sub" id="gspd"></p>
+ <div class="list">
+  <button class="item" id="gs0">Speed x1</button><button class="item" id="gs1">Speed x10</button><button class="item" id="gs2">Speed x100</button><button class="item" id="gs3">Speed x1,000</button><button class="item" id="gs4">Speed x1,000,000</button>
+  <button class="item" id="gfree">Free purchases: off</button>
+  <button class="item" id="gv1">Give 1K of each currency</button><button class="item" id="gv2">Give 1M of each currency</button><button class="item" id="gv3">Give 1B of each currency</button>
+  <button class="item" id="gbuy">Buy every upgrade</button>
+  <button class="item" id="gall">Reveal every layer</button>
+  <button class="item" id="gdel">Meet the Big Bang requirement</button>
+  <button class="item" id="gclose">Close</button>
+ </div>
+</dialog>
+<script>
+// ===== data =====
+const NC=8,DELUGE_REQ=50,FREE_BANGS=3;
+const UPS=[
+ {id:'net',name:'Wider dish',cost:12,desc:'Dishes catch x2 stardust in total',fx:s=>s.n=Math.max(s.n,2)},
+ {id:'u1',name:'Dust filter',cost:29,desc:'Star emits x1.25 stardust',fx:s=>s.f*=1.25},
+ {id:'tide',name:'Solar flare',cost:45,desc:'Star emits x2 stardust',fx:s=>s.f*=2},
+ {id:'u2',name:'Second dish',cost:110,desc:'Dishes catch x3 stardust in total',fx:s=>s.n=Math.max(s.n,3)},
+ {id:'u3',name:'Flare loops',cost:200,desc:'Star emits x1.25 stardust',fx:s=>s.f*=1.25},
+ {id:'net2',name:'Dish array',cost:300,desc:'Dishes catch x4 stardust in total',fx:s=>s.n=Math.max(s.n,4)},
+ {id:'u4',name:'Magnetic funnel',cost:490,desc:'Star emits x1.25 stardust',fx:s=>s.f*=1.25},
+ {id:'moon',name:'Fusion ignition',cost:750,desc:'Star emits x3 stardust',fx:s=>s.f*=3},
+ {id:'u5',name:'Plasma conduits',cost:2800,desc:'Star emits x1.25 stardust',fx:s=>s.f*=1.25},
+ {id:'net3',name:'Twin jets',cost:4200,desc:'Star emits x2 stardust and grows two more vents',fx:s=>s.f*=2},
+ {id:'u6',name:'Triple array',cost:10000,desc:'Dishes catch x6 stardust in total',fx:s=>s.n=Math.max(s.n,6)},
+ {id:'u7',name:'Heat shielding',cost:19000,desc:'Star emits x1.25 stardust',fx:s=>s.f*=1.25},
+ {id:'turb',name:'Orbital mirrors',cost:29000,desc:'Star emits x2 stardust and spins up a mirror ring',fx:s=>s.f*=2},
+ {id:'u8',name:'Solar sail swarm',cost:70000,desc:'Star emits x1.5 stardust',fx:s=>s.f*=1.5},
+ {id:'net4',name:'Gravity lens',cost:130000,desc:'Dishes catch x8 stardust in total',fx:s=>s.n=Math.max(s.n,8)},
+ {id:'u9',name:'Photon trap',cost:210000,desc:'Star emits x1.25 stardust',fx:s=>s.f*=1.25},
+ {id:'u10',name:'Coronal mass',cost:320000,desc:'Star emits x1.5 stardust',fx:s=>s.f*=1.5},
+ {id:'mega',name:'Supernova core',cost:580000,desc:'Star emits x3 stardust and grows two more vents',fx:s=>s.f*=3},
+ {id:'u11',name:'Dish farm',cost:2.1e6,desc:'Dishes catch x12 stardust in total',fx:s=>s.n=Math.max(s.n,12)},
+ {id:'u12',name:'Fusion chain',cost:3.9e6,desc:'Star emits x1.5 stardust',fx:s=>s.f*=1.5},
+ {id:'u13',name:'Neutrino catcher',cost:7.1e6,desc:'Star emits x1.25 stardust',fx:s=>s.f*=1.25},
+ {id:'u14',name:'Helium flash',cost:1.1e7,desc:'Star emits x2 stardust',fx:s=>s.f*=2},
+ {id:'u15',name:'Mega dish',cost:2.7e7,desc:'Dishes catch x16 stardust in total',fx:s=>s.n=Math.max(s.n,16)},
+ {id:'u16',name:'Stellar engine',cost:4.3e7,desc:'Star emits x1.5 stardust',fx:s=>s.f*=1.5},
+ {id:'u17',name:'Dark flow',cost:7.9e7,desc:'Star emits x1.5 stardust',fx:s=>s.f*=1.5},
+ {id:'u18',name:'Dish forest',cost:1.4e8,desc:'Dishes catch x24 stardust in total',fx:s=>s.n=Math.max(s.n,24)},
+ {id:'u19',name:'Quantum foam',cost:2.6e8,desc:'Star emits x2 stardust',fx:s=>s.f*=2},
+ {id:'u20',name:'Zero-point tap',cost:6.4e8,desc:'Star emits x2 stardust',fx:s=>s.f*=2},
+ {id:'u21',name:'Dish city',cost:1.6e9,desc:'Dishes catch x32 stardust in total',fx:s=>s.n=Math.max(s.n,32)},
+ {id:'u22',name:'Hypernova',cost:2.6e9,desc:'Star emits x2 stardust',fx:s=>s.f*=2},
+ {id:'u23',name:'Time dilation',cost:6.2e9,desc:'Star emits x2 stardust',fx:s=>s.f*=2},
+ {id:'u24',name:'Cosmic harvester',cost:1.5e10,desc:'Dishes catch x48 stardust in total',fx:s=>s.n=Math.max(s.n,48)},
+ {id:'u25',name:'Singularity engine',cost:2.8e10,desc:'Star emits x3 stardust',fx:s=>s.f*=3},
+ {id:'u26',name:'Galactic tap',cost:1e11,desc:'Star emits x2 stardust',fx:s=>s.f*=2},
+ {id:'u27',name:'Dish nebula',cost:2.5e11,desc:'Dishes catch x96 stardust in total',fx:s=>s.n=Math.max(s.n,96)},
+ {id:'u28',name:'Entropy engine',cost:6.1e11,desc:'Star emits x3 stardust',fx:s=>s.f*=3},
+ {id:'u29',name:'Big crunch',cost:2.2e12,desc:'Star emits x5 stardust',fx:s=>s.f*=5}
+];
+// Layers: each layer's currency is earned by resetting everything below it. b = stardust boost per unit held.
+const LAY=[null,
+ {name:'Asteroids',unit:'asteroids',verb:'Form an asteroid belt',div:132.6,b:.10},
+ {name:'Planets',unit:'planets',verb:'Forge a planet',div:70.76,b:.5},
+ {name:'Stars',unit:'stars',verb:'Ignite a star',div:8.89,b:1},
+ {name:'Black holes',unit:'black holes',verb:'Collapse a black hole',div:12895.66,b:2},
+ {name:'Galaxies',unit:'galaxies',verb:'Spin a galaxy',div:1.45,b:6},
+ {name:'Superclusters',unit:'superclusters',verb:'Gather a supercluster',div:4.93,b:20},
+ {name:'Quasars',unit:'quasars',verb:'Light a quasar',div:1.4,b:60}
+];
+LAY.forEach((L,j)=>{if(L)L.from=j===1?'stardust':LAY[j-1].name.toLowerCase()});
+const TREES=[null];
+function describe(n){const f=n.fx,L=LAY[n.l],p=[];
+ if(f.f)p.push('Star emits x'+f.f+' stardust');
+ if(f.g)p.push('Earn x'+f.g+' '+L.unit);
+ if(f.start)p.push('Begin each run with '+fmt(f.start)+' stardust');
+ if(f.ub)p.push('Each '+L.unit.replace(/s$/,'')+' boosts stardust +'+Math.round(f.ub*100)+'% more');
+ if('keep' in f)p.push('Keep '+(f.keep?LAY[f.keep].name.toLowerCase()+' upgrades':'stardust upgrades')+' through resets');
+ if('auto' in f)p.push('Auto: "'+LAY[f.auto].verb+'" at most every 20 seconds, when it would add at least 5% to your '+LAY[f.auto].unit+' (toggle in Settings)');
+ return p.join('. ')}
+const CK=0.5;
+function N(j,id,name,cost,x,y,req,fx,desc){cost=id==='first'?1:Math.max(1,Math.round(cost*CK));const n={l:j,id,name,cost,x,y,req,fx};n.desc=desc||describe(n);return n}
+TREES[1]=[
+ N(1,'deep','Bigger star',5,1.5,0,[],{f:2}),
+ N(1,'start','Seed dust',8,.5,1,['deep'],{start:250}),
+ N(1,'bloom','Solar wind',20,2.5,1,['deep'],{f:1.5}),
+ N(1,'hatch','Dust nursery',35,0,2,['start'],{start:3000}),
+ N(1,'tidal','Accretion',40,1,2,['start'],{g:1.25}),
+ N(1,'sluice','Corona',90,2.5,2,['bloom'],{f:2}),
+ N(1,'foreman','Autopilot',120,0,3,['hatch'],{autoUp:1},'Automatically buys stardust upgrades'),
+ N(1,'abyss','Gravity wells',160,1.75,3,['tidal','sluice'],{ub:.05}),
+ N(1,'delta','Binary star',350,1.75,4,['abyss'],{f:3}),
+ N(1,'gates','Hardened hull',500,0,4,['foreman'],{keep:0}),
+ N(1,'dredge','Asteroid mining',600,1.75,5,['delta'],{g:1.5}),
+ N(1,'ocean','Red giant',1500,1.75,6,['dredge'],{f:5})
+];
+TREES[2]=[
+ N(2,'conc','Iron core',2,1.5,0,[],{f:2}),
+ N(2,'surv','Orbit surveyor',3,.5,1,['conc'],{g:1.5}),
+ N(2,'megad','Gas giant',6,2.5,1,['conc'],{f:3},'Star emits x3 stardust and the star grows larger'),
+ N(2,'cranes','Orbital cranes',12,0,2,['surv'],{start:200000}),
+ N(2,'sealant','Atmosphere',15,2.5,2,['megad'],{f:2}),
+ N(2,'archive','Planetary archive',35,1.75,3,['cranes','sealant'],{keep:1}),
+ N(2,'control','Belt autopilot',60,.5,4,['archive'],{auto:1}),
+ N(2,'steel','Dyson swarm',100,1.75,4,['archive'],{f:5}),
+ N(2,'arch','Terraformers',220,1.75,5,['steel'],{g:2})
+];
+const GP=[[1.5,0,[]],[.5,1,[0]],[2.5,1,[0]],[0,2,[1]],[1,2,[1]],[2.5,2,[2]],[1.75,3,[4,5]],[.5,4,[6]],[1.75,4,[6]],[1.75,5,[8]]];
+const GC=[1,2,3,5,7,10,18,25,35,60];
+function gen(j,names,k,start,ub,fp){
+ const id=i=>'n'+i,P=x=>Math.round(Math.pow(x,fp)*100)/100;
+ const FX=[{f:P(2)},{f:P(2.5)},{g:1.5},{start},{f:P(3)},{ub},{keep:j-1},{auto:j-1},{f:P(5)},{g:2}];
+ TREES[j]=names.map((nm,i)=>N(j,id(i),nm,Math.max(1,Math.round(GC[i]*k)),GP[i][0],GP[i][1],GP[i][2].map(id),FX[i]))}
+gen(3,['Protostar','Fusion','Photosphere','Hydrogen reserve','Red dwarfs','Corona loops','Stellar archive','Star tender','Neutron core','Star forge'],1,1e7,.25,1);
+gen(4,['Event horizon','Accretion disk','Hawking glow','Stored matter','Spaghettification','Singularity','Gravity archive','Void keeper','Photon sphere','Jet engines'],1,1e10,.5,1.1);
+gen(5,['Spiral arms','Dust lanes','Satellite dwarfs','Seeded stars','Halo','Galactic core','Rotation curve','Galaxy tender','Starburst','Great attractor'],1,1e13,1,1.2);
+gen(6,['Filaments','Voids','Walls','Cosmic web','Mergers','Dark halos','Survey archive','Cluster tender','Great wall','Hubble flow'],1,1e16,2,1.3);
+gen(7,['Ignition','Jets','Luminosity','Accretion burst','Lighthouse','Redshift','Radio archive','Quasar tender','Blazar','Cosmic beacon'],1,1e19,4,1.4);
+// Every layer starts with a cheap node you can buy right after its first reset. Its boost is x2 at least, and 1.5 times the boost you lose by spending that first unit.
+const STN=[null,'Loose rocks','Surveyed orbit','Pilot flame','Tiny singularity','Dust cloud','Cosmic thread','First glow'];
+for(let j=1;j<NC;j++){const T=TREES[j];T.forEach(n=>n.y+=1);const root=T.find(n=>!n.req.length);root.req=['first'];T.unshift(N(j,'first',STN[j],1,1.5,0,[],{f:Math.max(2,Math.round((1+LAY[j].b)*150)/100)}))}
+
+// ===== helpers =====
+const clamp=x=>Math.min(1,Math.max(0,x));
+function fmt(n){if(!isFinite(n))return 'infinite';if(n>=1e36)return n.toExponential(2).replace('+','');
+ if(n<1000)return n<10&&n%1?n.toFixed(1):Math.floor(n).toString();
+ const u=['K','M','B','T','Qa','Qi','Sx','Sp','Oc','No','Dc'];let i=-1;while(n>=1000&&i<u.length-1){n/=1000;i++}return n.toFixed(2)+u[i]}
+const fmtF=n=>n<1000?n.toFixed(2):fmt(n);
+function eta(s){if(!isFinite(s))return 'a long time';s=Math.ceil(s);if(s<60)return s+'s';if(s<3600)return Math.floor(s/60)+'m '+(s%60)+'s';
+ if(s<86400)return Math.floor(s/3600)+'h '+Math.floor(s%3600/60)+'m';return Math.floor(s/86400)+'d '+Math.floor(s%86400/3600)+'h'}
+
+// ===== state =====
+let S,M,ENT={};const has=k=>!!ENT[k];
+const fresh=()=>({v:2,pwSeen:false,c:Array(NC).fill(0),r:Array(NC).fill(0),res:Array(NC+1).fill(0),seen:Array(NC+1).fill(false),
+ up:Array.from({length:NC},()=>({})),deluges:0,tot:0,time:0,golden:0,ach:{},speed2:false,god:false,gspeed:1,gfree:false,autoOn:true,buffT:0,autoT:Array(NC).fill(-1e9),skin:0,sessions:[],testEnt:{},entCache:{},last:Date.now()});
+function load(){let o=null;try{o=JSON.parse(localStorage.getItem('starforge'))}catch(e){}
+ const f=fresh();if(!o)return f;
+ if(o.v===2){const s=Object.assign(f,o),b=fresh();['c','r','res','seen'].forEach(k=>{s[k]=Object.assign(b[k].slice(),o[k]||[])});
+  s.up=b.up.map((x,i)=>Object.assign({},(o.up||[])[i]));s.ach=o.ach||{};
+  // Repair saves damaged by overflow: a number that became null, NaN or infinite is set to 0, and huge ones are capped
+  const num=x=>Number.isFinite(x)&&x>0?Math.min(x,CAP):0;
+  s.c=s.c.map(num);s.r=s.r.map(num);s.res=s.res.map(num);['tot','time','deluges','golden','buffT'].forEach(k=>s[k]=num(s[k]));
+  s.autoT=Array.from({length:NC},(_,i)=>Number.isFinite((o.autoT||[])[i])?o.autoT[i]:-1e9);s.gspeed=Math.max(1,num(s.gspeed));
+  return s}
+ return f}
+function save(){try{S.last=Date.now();localStorage.setItem('starforge',JSON.stringify(S))}catch(e){}}
+
+// ===== rules =====
+function calc(){const m={f:1,n:1,start:0,autoUp:0,g:Array(NC).fill(1),ub:Array(NC).fill(0),auto:Array(NC).fill(0),keep:Array(NC).fill(0)};
+ UPS.forEach(u=>{if(S.up[0][u.id])u.fx(m)});
+ for(let j=1;j<NC;j++)TREES[j].forEach(n=>{if(S.up[j][n.id]){const x=n.fx;
+  if(x.f)m.f*=x.f;if(x.g)m.g[j]*=x.g;if(x.ub)m.ub[j]+=x.ub;if(x.start)m.start=Math.max(m.start,x.start);if(x.autoUp)m.autoUp=1;
+  if('auto' in x)m.auto[x.auto]=1;if('keep' in x)m.keep[x.keep]=1}});
+ return m}
+const dMult=()=>Math.pow(2,S.deluges);
+const achMult=()=>1+0.02*Object.keys(S.ach).length;
+const CAP=1e200,AUTO_GAP=20,AUTO_MIN=0.05;
+// A currency's boost is linear up to 1 unit, then grows like its square root, so layers cannot feed each other without limit
+const eff=c=>c<=1?c:Math.sqrt(c);
+function boost(){let b=1;for(let j=1;j<NC;j++)b=Math.min(b*(1+(LAY[j].b+M.ub[j])*eff(S.c[j])),1e100);return b}
+const flow=()=>Math.min(CAP,M.f*boost()*achMult()*dMult()*(has('x2')?2:1)*(S.buffT>0?7:1));
+const perSec=()=>flow()*M.n;
+const SY=0.05;
+const syn=j=>{let m=1;for(let k=j+1;k<NC;k++)m=Math.min(m*(1+0.3*Math.log10(1+S.c[k])),1e100);return m};
+const gain=j=>Math.min(CAP,Math.sqrt(S.r[j-1]/LAY[j].div)*M.g[j]*syn(j)*dMult());
+const need=j=>Math.max(0,LAY[j].div/Math.pow(M.g[j]*syn(j)*dMult(),2)-S.r[j-1]);
+const cost=c=>S.god&&S.gfree?0:c;
+const avail=n=>n.req.every(r=>S.up[n.l][r]);
+const countNodes=()=>{let k=0;for(let j=1;j<NC;j++)k+=Object.keys(S.up[j]).length;return k};
+function credit(v){if(!(v>0))return;S.c[0]=Math.min(CAP,S.c[0]+v);S.r[0]=Math.min(CAP,S.r[0]+v);S.tot=Math.min(CAP,S.tot+v)}
+let onReset=()=>{},toast=()=>{};
+function doReset(j){const g=gain(j);if(!(g>=1))return false;
+ S.c[j]=Math.min(CAP,S.c[j]+g);S.r[j]=Math.min(CAP,S.r[j]+g);S.res[j]++;S.seen[j]=true;const keep=M.keep.slice();
+ for(let i=0;i<j;i++){S.c[i]=0;S.r[i]=0;if(!keep[i])S.up[i]={}}
+ M=calc();S.c[0]=M.start;onReset();return true}
+function doDeluge(){if(S.r[7]<DELUGE_REQ)return false;if(S.deluges>=FREE_BANGS&&!has('cosmos'))return false;
+ S.deluges++;S.res[8]++;S.seen[8]=true;S.c.fill(0);S.r.fill(0);S.up=S.up.map(()=>({}));M=calc();onReset();return true}
+function buyUp(u){const c=cost(u.cost);if(S.up[0][u.id]||S.c[0]<c)return false;S.c[0]-=c;S.up[0][u.id]=1;M=calc();return true}
+function buyNode(n){if(S.up[n.l][n.id]||!avail(n))return false;const c=cost(n.cost);if(S.c[n.l]<c)return false;S.c[n.l]-=c;S.up[n.l][n.id]=1;M=calc();return true}
+function auto(){if(!S.autoOn)return;
+ if(M.autoUp){const u=UPS.find(u=>!S.up[0][u.id]&&S.c[0]>=u.cost);if(u)buyUp(u)}
+ for(let j=NC-1;j>=1;j--)if(M.auto[j]&&S.time-S.autoT[j]>=AUTO_GAP&&gain(j)>=Math.max(1,AUTO_MIN*S.r[j])){if(doReset(j)){S.autoT[j]=S.time;break}}}
+// ===== achievements =====
+const ACH=[
+ ['c1','First sparks','Collect 100 stardust',()=>S.tot>=100],
+ ['c2','Dust bunny','Collect 10,000 stardust',()=>S.tot>=1e4],
+ ['c3','Cosmic collector','Collect 1 million stardust',()=>S.tot>=1e6],
+ ['c4','Stardust memories','Collect 1 billion stardust',()=>S.tot>=1e9],
+ ['c5','Nebula in a jar','Collect 1 trillion stardust',()=>S.tot>=1e12],
+ ['c6','Milky Way','Collect 1 quintillion stardust',()=>S.tot>=1e18],
+ ['c7','Nothing left to collect','Collect 1 nonillion stardust',()=>S.tot>=1e30],
+ ['f1','Ignition','Form an asteroid belt once',()=>S.res[1]>=1],
+ ['f2','Belt buckler','Form an asteroid belt 25 times',()=>S.res[1]>=25],
+ ['l2','World builder','Forge a planet',()=>S.res[2]>=1],
+ ['l3','Let there be light','Ignite a star',()=>S.res[3]>=1],
+ ['l4','Into the void','Collapse a black hole',()=>S.res[4]>=1],
+ ['l5','Spiral out','Spin a galaxy',()=>S.res[5]>=1],
+ ['l6','Cosmic web','Gather a supercluster',()=>S.res[6]>=1],
+ ['l7','Beacon','Light a quasar',()=>S.res[7]>=1],
+ ['d1','In the beginning','Trigger the Big Bang',()=>S.deluges>=1],
+ ['d2','Cycle of creation','Trigger 3 Big Bangs',()=>S.deluges>=3],
+ ['g1','Wish upon a star','Catch a golden comet',()=>S.golden>=1],
+ ['g2','Comet chaser','Catch 10 golden comets',()=>S.golden>=10],
+ ['g3','Meteor shower','Catch 50 golden comets',()=>S.golden>=50],
+ ['t1','Night shift','Play for 1 hour',()=>S.time>=3600],
+ ['t2','Astronomer','Play for 10 hours',()=>S.time>=36000],
+ ['u1','Fully equipped','Buy every stardust upgrade',()=>UPS.every(u=>S.up[0][u.id])],
+ ['u2','Constellation','Own 25 tree upgrades at once',()=>countNodes()>=25],
+ ['u3','Galaxy brain','Own 60 tree upgrades at once',()=>countNodes()>=60]
+];
+function achCheck(){ACH.forEach(a=>{if(!S.ach[a[0]]&&a[3]()){S.ach[a[0]]=1;toast('Trophy: '+a[1]+' (+2% fish)')}})}
+function simStep(dt,skipCredit){S.time+=dt;if(S.buffT>0)S.buffT=Math.max(0,S.buffT-dt);
+ if(!skipCredit)credit(perSec()*dt*S.gspeed);auto();achCheck()}
+// ===== browser side =====
+const $=id=>document.getElementById(id);
+const CUR=[{name:'Stardust',val:()=>fmt(S.c[0]),sub:()=>fmt(perSec()*S.gspeed)+' per second',
+ fill:()=>{const u=UPS.find(u=>!S.up[0][u.id]);return u?clamp(S.c[0]/u.cost):1}}];
+for(let j=1;j<NC;j++)CUR.push({name:LAY[j].name,val:()=>fmtF(S.c[j]),sub:()=>'Next: +'+fmtF(gain(j)),fill:()=>clamp(gain(j)),show:()=>S.seen[j]});
+CUR.push({name:'Big Bang',val:()=>'x'+fmt(dMult()),sub:()=>S.deluges+' so far',fill:()=>clamp(S.r[7]/DELUGE_REQ),show:()=>S.seen[8]||S.deluges>0});
+let aL=1,gen_=0;
+function buildBars(){$('bars').innerHTML=CUR.map((c,i)=>`<div class="bar" id="bar${i}"><div class="bn">${c.name}</div><div class="bv" id="bv${i}"></div><div class="bs" id="bs${i}"></div><div class="m"><i id="bf${i}"></i></div></div>`).join('')}
+function buildUps(){const l=$('ups');l.innerHTML='';UPS.forEach(u=>{const b=document.createElement('button');b.className='item up';b.id='u-'+u.id;
+ b.innerHTML=`<span><b>${u.name}</b><small>${u.desc}</small></span><span class="cost">${fmt(u.cost)}</span>`;
+ b.onclick=()=>{if(buyUp(u))render()};l.appendChild(b)})}
+const NW=170,NH=104,UX=190,UY=132;
+function buildTree(j){const t=$('tree'),T=TREES[j],W=Math.max(...T.map(u=>u.x*UX+NW))+4,H=Math.max(...T.map(u=>u.y*UY+NH))+4;
+ t.style.width=W+'px';t.style.height=H+'px';let svg='';
+ T.forEach(u=>u.req.forEach(r=>{const p=T.find(v=>v.id===r),x1=p.x*UX+NW/2,y1=p.y*UY+NH,x2=u.x*UX+NW/2,y2=u.y*UY;
+  svg+=`<path id="e-${r}-${u.id}" d="M${x1} ${y1}C${x1} ${y1+34},${x2} ${y2-34},${x2} ${y2}" fill="none" stroke="#9bf0d8" stroke-width="3" stroke-linecap="round"/>`}));
+ t.innerHTML=`<svg width="${W}" height="${H}">${svg}</svg>`;
+ T.forEach(u=>{const b=document.createElement('button');b.className='tn';b.id='t-'+u.id;b.style.left=u.x*UX+'px';b.style.top=u.y*UY+'px';b.style.minHeight=NH+'px';
+  b.innerHTML=`<b>${u.name}</b><small>${u.desc}</small><span class="cost"></span>`;
+  b.onclick=()=>{if(buyNode(u)){save();render()}};t.appendChild(b)})}
+function renderTree(j){const unit=LAY[j].unit;TREES[j].forEach(u=>{const own=!!S.up[j][u.id],vis=own||avail(u),b=$('t-'+u.id);
+ b.style.display=vis?'':'none';b.classList.toggle('own',own);b.disabled=!own&&S.c[j]<cost(u.cost);
+ b.querySelector('.cost').textContent=own?'Owned':fmt(cost(u.cost))+' '+unit;
+ u.req.forEach(r=>{const e=$('e-'+r+'-'+u.id);e.style.display=vis?'':'none';e.setAttribute('stroke-dasharray',own?'':'7 7');e.setAttribute('opacity',own?'1':'.65')})})}
+function buildTabs(){$('ltabs').innerHTML=Array.from({length:NC},(_,i)=>i+1).map(j=>`<button id="lt${j}">${j<NC?LAY[j].name:'Big Bang'}</button>`).join('');
+ for(let j=1;j<=NC;j++)$('lt'+j).onclick=()=>setLayer(j)}
+function setLayer(j){aL=j;$('treewrap').style.display=j<NC?'':'none';if(j<NC)buildTree(j);renderShop()}
+function renderShop(){if(!$('shop').classList.contains('open'))return;const j=aL;
+ for(let i=1;i<=NC;i++){const b=$('lt'+i);b.style.display=(i<NC?S.seen[i]:S.seen[8]||S.deluges>0)?'':'none';b.classList.toggle('on',i===j)}
+ const r=$('lreset');
+ if(j<NC){const L=LAY[j],g=gain(j);$('lname').textContent=L.name;$('lamt').textContent=fmtF(S.c[j]);$('lunit').textContent=L.unit;
+  const bo=(L.b+M.ub[j])*eff(S.c[j]);$('lboost').textContent='Your '+fmtF(S.c[j])+' '+L.unit+' boost stardust by +'+fmt(Math.round(bo*100))+'%. Spending them lowers the boost.'+(syn(j)>1.0005?' Higher layers also boost your '+L.unit+' gain by x'+fmt(Math.round(syn(j)*100)/100)+'.':'');
+  r.disabled=!(g>=1);r.textContent=g>=1?L.verb+' for +'+fmtF(g)+' '+L.unit+' (resets everything below)':'Earn '+fmtF(need(j))+' more '+L.from+' to '+L.verb.toLowerCase();
+  renderTree(j)}
+ else{$('lname').textContent='The Big Bang';$('lamt').textContent='x'+fmt(dMult());$('lunit').textContent='to every currency';
+  $('lboost').textContent='Trigger the Big Bang to wipe out everything: all stardust, currencies and upgrades. In return, every currency is doubled for good. You have done it '+S.deluges+' times. Light '+DELUGE_REQ+' quasars in a single run to do it (this run: '+fmtF(S.r[7])+').';
+  r.disabled=S.r[7]<DELUGE_REQ;r.textContent=S.r[7]>=DELUGE_REQ?'Trigger the Big Bang (x'+fmt(dMult()*2)+' to every currency)':'Light '+fmtF(DELUGE_REQ-S.r[7])+' more quasars'}}
+function openShop(j){const r=$('star').getBoundingClientRect(),s=$('shop');
+ s.style.setProperty('--x',(r.left+r.width/2)+'px');s.style.setProperty('--y',(r.top+r.height/2)+'px');s.classList.add('open');s.scrollTop=0;setLayer(j||aL)}
+function layoutStar(k){const st=$('star'),w=st.clientWidth,h=st.clientHeight;if(!w)return;
+ const R=w*[.62,.74,.85][k],cx=w*.9,cy=h/2,sun=$('sun');
+ sun.style.width=sun.style.height=2*R+'px';sun.style.left=(cx-R)+'px';sun.style.top=(cy-R)+'px';
+ const ang=[-9,13,-30,32,-52,54];
+ document.querySelectorAll('#star .vent').forEach((v,i)=>{const a=ang[i]*Math.PI/180;v.style.left=(cx-R*Math.cos(a)-5)+'px';v.style.top=(cy+R*Math.sin(a)-5)+'px'})}
+function zone(){const W=innerWidth,dl=$('star').getBoundingClientRect().left,z0=W<700?12:.2*W,w=Math.max(Math.min(.8*W,dl-20)-z0,60);return{z0,w,c:z0+w/2}}
+function hint(){const u=UPS.find(u=>!S.up[0][u.id]);if(!u)return 'All stardust upgrades bought';const rem=u.cost-S.c[0];
+ return rem<=0?'Ready to buy: '+u.name:'Next: '+u.name+' in '+eta(rem/Math.max(perSec()*S.gspeed,1e-9))}
+function render(){
+ for(let j=1;j<NC;j++)if(!S.seen[j]&&(gain(j)>=1||S.c[j]>0))S.seen[j]=true;
+ const g=gain(1),n=M.n,z=zone(),dm=$('star'),U=S.up[0];
+ $('pp').textContent=fmtF(S.c[1]);$('ppl').style.display=S.seen[1]?'':'none';
+ $('gain').textContent=!S.seen[1]?'':g>=1?'Click for +'+fmtF(g)+' asteroids':'Need 1.00 asteroid (now '+fmtF(g)+')';
+ let aff=0,shown=0;UPS.forEach(u=>{const b=$('u-'+u.id);if(U[u.id]||shown>=8){b.style.display='none'}else{shown++;b.style.display='';b.disabled=S.c[0]<cost(u.cost);b.style.setProperty('--p',Math.min(100,S.c[0]/Math.max(cost(u.cost),1)*100)+'%');if(S.c[0]>=cost(u.cost))aff++}});
+ $('ubadge').textContent=aff?'('+aff+')':'';
+ const nw=z.w*(n>=8?.9:n>=4?.72:n>=2?.5:.36),net=$('net');
+ net.style.left=(z.c-nw/2)+'px';net.style.width=nw+'px';net.classList.toggle('dbl',n>=4);net.classList.toggle('fine',n>=8);
+ layoutStar(S.up[2].megad?2:S.up[1].deep?1:0);applySkin();
+ dm.classList.toggle('spill',!!U.net3);dm.classList.toggle('hasturb',!!U.turb);dm.classList.toggle('mega',!!U.mega);
+ $('fall').classList.toggle('rich',!!S.up[1].bloom);
+ $('scene').style.filter=S.deluges?'hue-rotate('+(S.deluges*40)+'deg) saturate(1.1)':'';
+ $('catchinfo').textContent=(UPS.filter(u=>!U[u.id]).length>8?'Showing your next 8 of '+UPS.filter(u=>!U[u.id]).length+' upgrades. ':'')+'Your dishes catch x'+n+' stardust. The star emits '+fmt(flow())+' per second before dishes.';
+ CUR.forEach((cu,i)=>{$('bar'+i).style.display=cu.show&&!cu.show()?'none':'';$('bv'+i).textContent=cu.val();$('bs'+i).textContent=cu.sub();$('bf'+i).style.width=(cu.fill()*100)+'%'});
+ $('hn').textContent=fmt(S.c[0]);$('hs').textContent='stardust, +'+fmt(perSec()*S.gspeed)+' per second'+(S.buffT>0?' (meteor shower x7: '+Math.ceil(S.buffT)+'s)':'')+(has('x2')?' (2x income)':'');
+ $('hh').textContent=hint();$('hud').style.left=z.c+'px';
+ $('bars').parentNode.style.setProperty('--bh',($('bars').offsetHeight+12)+'px');
+ renderShop();document.title=fmt(S.c[0])+' stardust - Starforge'}
+// ===== fish and golden fish =====
+const K=12;let acc=0,last=0,gT=45;
+function spawn(v){const fall=$('fall');if(!fall.clientHeight)return;
+ const nr=$('net').getBoundingClientRect(),nx=nr.left+10+Math.random()*Math.max(nr.width-20,1);
+ const gs=[...document.querySelectorAll('.vent')].filter(g=>g.offsetWidth),r=gs[Math.random()*gs.length|0].getBoundingClientRect(),gx=r.left,gy=r.top+r.height/2;
+ const d=document.createElement('div');d.className='pl';d.style.left=gx+'px';d.style.top=gy+'px';
+ d.style.setProperty('--dx',(nx-gx)+'px');d.style.setProperty('--dy',Math.max(nr.top+8-gy,40)+'px');d.appendChild(document.createElement('i'));fall.appendChild(d);
+ const g=gen_;setTimeout(()=>{d.remove();if(g===gen_)credit(v)},1000)}
+function spawnGolden(){const g=document.createElement('button');g.className='gold';g.setAttribute('aria-label','Golden comet: click for a bonus');
+ g.style.top=(14+Math.random()*38)+'%';
+ g.onclick=()=>{S.golden++;g.remove();
+  if(Math.random()<.6){S.buffT=30;toast('Golden comet: meteor shower! x7 stardust for 30 seconds')}
+  else{const v=Math.max(perSec()*S.gspeed*600,25);credit(v);toast('Golden comet: lucky find! +'+fmt(v)+' stardust')}render()};
+ document.body.appendChild(g);setTimeout(()=>g.remove(),11500)}
+function away(sec){const v=perSec()*S.gspeed*Math.min(sec,has('offline')?172800:43200)*(has('offline')?1:.5);credit(v);if(sec>=30)toast('Welcome back! In '+eta(sec)+' away, the star sent you '+fmt(v)+' stardust.')}
+function tick(){const n=performance.now();let dt=(n-last)/1000;last=n;
+ if(dt>10){away(dt);render();return}
+ if(document.hidden){simStep(dt,false);render();return}
+ simStep(dt,true);acc+=K*dt;const cnt=Math.floor(acc);acc-=cnt;const m=Math.min(cnt,4);
+ for(let i=0;i<m;i++)spawn(perSec()*S.gspeed/K*cnt/m);
+ gT-=dt;if(gT<=0){gT=50+Math.random()*60;spawnGolden()}render()}
+// ===== resets with the floodgate rush =====
+let busy=false;
+function rush(fn){if(busy)return;busy=true;const dam=$('star'),r=$('rush');dam.classList.add('flood');
+ if(matchMedia('(prefers-reduced-motion:reduce)').matches){fn();setTimeout(()=>{dam.classList.remove('flood');busy=false},300);return}
+ r.classList.add('on');
+ setTimeout(()=>{fn();r.classList.remove('on');r.classList.add('out')},850);
+ setTimeout(()=>{r.style.transition='none';r.classList.remove('out');void r.offsetWidth;r.style.transition='';dam.classList.remove('flood');busy=false},1750)}
+function renderAch(){const n=Object.keys(S.ach).length;
+ $('achsum').textContent=n+' of '+ACH.length+' trophies. Each one gives +2% fish (now +'+n*2+'%).';
+ $('achg').innerHTML=ACH.map(a=>`<div class="ac${S.ach[a[0]]?' on':''}"><b>${a[1]}</b><small>${a[2]}</small></div>`).join('');
+ const hrs=eta(S.time),rows=[['Play time',hrs],['Lifetime stardust',fmt(S.tot)],['Golden comets caught',S.golden],['Asteroid belts formed',S.res[1]],['Big Bangs',S.deluges],['Tree upgrades owned',countNodes()]];
+ $('stats').innerHTML=rows.map(r=>`<span>${r[0]}</span><b>${r[1]}</b>`).join('')}
+// ===== store and payments =====
+// Fill this in after you set up Stripe (see README.md). A product with a link is sold for real.
+// A product without a link is only unlockable while testMode is true. Set testMode to false before you launch.
+const CONFIG={
+ apiUrl:'',
+ testMode:true,
+ products:{
+  x2:{name:'2x income',price:'$4.99',desc:'All stardust income is doubled, forever',link:''},
+  offline:{name:'Night owl',price:'$2.99',desc:'Offline progress at 100% for up to 48 hours, instead of 50% for 12',link:''},
+  skins:{name:'Nova skins',price:'$1.99',desc:'Recolor your star: blue giant, white dwarf or magenta pulsar',link:''},
+  cosmos:{name:'Infinite Cosmos',price:'$10',desc:'Unlimited Big Bangs, each doubling everything again. The free game allows three.',link:'',hidden:true}
+ }
+};
+const SKINS=[
+ {n:'Yellow dwarf',c:['#fffbe0','#ffe27a','#ffa12b','#e2491f','#a8240f'],g:'#ff9a3a88',g2:'#ffb04dbb'},
+ {n:'Blue giant',c:['#f4fbff','#bfe6ff','#5bb4ff','#2a5fe0','#16308f'],g:'#4aa3ff88',g2:'#7ec0ffbb'},
+ {n:'White dwarf',c:['#ffffff','#f1f1ff','#cfd2ee','#9ea3c9','#6b7099'],g:'#d8dcff77',g2:'#ffffffaa'},
+ {n:'Magenta pulsar',c:['#fff0fb','#ffa8f0','#e83cd0','#9c1fa8','#561070'],g:'#ff4fe088',g2:'#ff8cf0bb'}
+];
+let skinKey=-1;
+function applySkin(){const i=has('skins')?(S.skin||0):0;if(i===skinKey)return;skinKey=i;const k=SKINS[i],st=$('star');
+ k.c.forEach((c,n)=>st.style.setProperty('--c'+n,c));st.style.setProperty('--g',k.g);st.style.setProperty('--g2',k.g2)}
+function refreshEnt(){ENT=Object.assign({},S.entCache,CONFIG.testMode?S.testEnt:{})}
+// Each purchase comes back as a Stripe session id. The Worker checks it with Stripe and says what it unlocked.
+async function verifyAll(){if(!CONFIG.apiUrl||!S.sessions.length)return;const ok={};let fail=false;
+ for(const id of S.sessions){try{const r=await fetch(CONFIG.apiUrl+'/verify?session_id='+encodeURIComponent(id));if(!r.ok)continue;const j=await r.json();if(j.ok)j.ent.forEach(k=>ok[k]=1)}catch(e){fail=true}}
+ if(!fail)S.entCache=ok;refreshEnt();save();render();renderStore()}
+function buyProduct(k){const p=CONFIG.products[k];
+ if(p.link){if(window.top===window)location.href=p.link;else window.open(p.link,'_blank','noopener');const m='Finish checkout, then come back. Your purchase unlocks automatically.';$('smsg').textContent=m;$('paymsg').textContent=m}
+ else if(CONFIG.testMode){S.testEnt[k]=1;refreshEnt();save();render();renderStore();const m=p.name+' unlocked (test mode, nothing charged).';$('smsg').textContent=m;$('paymsg').textContent=m;if($('pay').open)$('pay').close()}}
+function showPay(){S.pwSeen=true;save();const p=CONFIG.products.cosmos;$('paymsg').textContent='';
+ $('paybuy').textContent=p.link?'Unlock for '+p.price:CONFIG.testMode?'Unlock free (test mode)':'Not available yet';$('paybuy').disabled=!p.link&&!CONFIG.testMode;$('pay').showModal()}
+function renderStore(){const el=$('sitems');el.innerHTML='';
+ Object.keys(CONFIG.products).forEach(k=>{const p=CONFIG.products[k],own=has(k),b=document.createElement('button');b.className='item';if(p.hidden&&!own&&!S.pwSeen)return;
+  b.disabled=own||(!p.link&&!CONFIG.testMode);
+  b.innerHTML=`<span><b>${p.name}</b><small>${p.desc}</small></span><span class="cost">${own?'Owned':p.link?p.price:CONFIG.testMode?'Free (test)':'Soon'}</span>`;
+  b.onclick=()=>buyProduct(k);
+  el.appendChild(b)});
+ if(has('skins'))SKINS.forEach((k,i)=>{const b=document.createElement('button');b.className='item';
+  b.innerHTML=`<span><b>Star: ${k.n}</b></span><span class="cost">${(S.skin||0)===i?'Selected':''}</span>`;
+  b.onclick=()=>{S.skin=i;save();render();renderStore()};el.appendChild(b)})}
+// ===== god mode =====
+function godGive(a){for(let j=1;j<NC;j++)S.c[j]+=a;S.c[0]+=a*1e6;for(let j=1;j<NC;j++)S.seen[j]=true;S.seen[8]=true;M=calc();render()}
+function renderGod(){$('gspd').textContent='Game speed: x'+fmt(S.gspeed);$('gfree').textContent='Free purchases: '+(S.gfree?'on':'off')}
+function boot(){
+ S=load();M=calc();last=performance.now();
+ onReset=()=>{gen_++;$('fall').innerHTML=''};
+ toast=t=>{const d=document.createElement('div');d.className='toast';d.textContent=t;$('toasts').appendChild(d);setTimeout(()=>d.remove(),4500)};
+ buildBars();buildUps();buildTabs();
+ refreshEnt();
+ const sec=(Date.now()-S.last)/1000;if(sec>60)away(sec);
+ const q=new URLSearchParams(location.search).get('session_id');
+ if(q&&/^cs_(test|live)_/.test(q)){if(!S.sessions.includes(q)){S.sessions.push(q);save();toast('Thanks for your purchase! Checking it now...')}try{history.replaceState(null,'',location.pathname)}catch(e){}}
+ verifyAll();
+ $('star').onclick=()=>{if(busy)return;const g=gain(1);if(g<1){if(S.seen[1])openShop(1);return}rush(()=>{doReset(1);save();openShop(1);render()})};
+ $('lreset').onclick=()=>{if(aL<NC){if(!(gain(aL)>=1))return;const j=aL;rush(()=>{doReset(j);save();renderShop();render()})}
+  else{if(S.r[7]<DELUGE_REQ)return;if(S.deluges>=FREE_BANGS&&!has('cosmos')){showPay();return}rush(()=>{doDeluge();save();renderShop();render()})}};
+ $('surface').onclick=()=>$('shop').classList.remove('open');
+ $('utab').onclick=()=>$('drawer').classList.toggle('open');
+ $('uclose').onclick=()=>$('drawer').classList.remove('open');
+ $('ltab').onclick=()=>{$('drawer').classList.remove('open');openShop(S.seen[1]?aL:1)};
+ $('atab').onclick=()=>{renderAch();$('achd').showModal()};
+ $('aclose').onclick=()=>$('achd').close();
+ $('stab').onclick=()=>{$('smsg').textContent='';renderStore();$('store').showModal()};
+ $('sclose').onclick=()=>$('store').close();
+ $('paybuy').onclick=()=>buyProduct('cosmos');$('payno').onclick=()=>$('pay').close();
+ 
+ let armed=false,armT;
+ const disarm=()=>{armed=false;clearTimeout(armT);$('reset').textContent='Reset all progress'};
+ const setS=()=>{$('autob').textContent='Automation: '+(S.autoOn?'on':'off');$('godb').textContent='God mode: '+(S.god?'on':'off');$('godopen').style.display=S.god?'':'none'};
+ $('settings').onclick=()=>{$('msg').textContent='';disarm();setS();$('dlg').showModal()};
+ $('close').onclick=()=>$('dlg').close();
+ $('dlg').addEventListener('close',disarm);
+ $('save').onclick=()=>{save();$('msg').textContent='Saved.'};
+ $('autob').onclick=()=>{S.autoOn=!S.autoOn;setS()};
+ $('godb').onclick=()=>{S.god=!S.god;if(!S.god){S.gspeed=1;S.gfree=false}setS();render()};
+ $('godopen').onclick=()=>{$('dlg').close();renderGod();$('god').showModal()};
+ $('export').onclick=()=>{save();$('box').value=btoa(JSON.stringify(S));$('msg').textContent='Copy the text above to back up your game.'};
+ $('import').onclick=()=>{try{const o=JSON.parse(atob($('box').value.trim()));localStorage.setItem('starforge',JSON.stringify(o));S=load();M=calc();gen_++;$('fall').innerHTML='';render();$('msg').textContent='Game loaded.'}catch(e){$('msg').textContent='That save text is not valid.'}};
+ $('reset').onclick=()=>{if(!armed){armed=true;$('reset').textContent='Click again to erase everything';armT=setTimeout(disarm,4000);return}
+  disarm();S=fresh();M=calc();gen_++;$('fall').innerHTML='';save();render();$('msg').textContent='Progress reset.'};
+ [1,10,100,1000,1e6].forEach((v,i)=>{$('gs'+i).onclick=()=>{S.gspeed=v;renderGod()}});
+ $('gfree').onclick=()=>{S.gfree=!S.gfree;renderGod();render()};
+ $('gv1').onclick=()=>godGive(1e3);$('gv2').onclick=()=>godGive(1e6);$('gv3').onclick=()=>godGive(1e9);
+ $('gbuy').onclick=()=>{UPS.forEach(u=>S.up[0][u.id]=1);for(let j=1;j<NC;j++)TREES[j].forEach(n=>S.up[j][n.id]=1);M=calc();render()};
+ $('gall').onclick=()=>{S.seen.fill(true);render()};
+ $('gdel').onclick=()=>{S.r[7]=Math.max(S.r[7],DELUGE_REQ);S.seen[7]=true;S.seen[8]=true;render()};
+ $('gclose').onclick=()=>$('god').close();
+ document.addEventListener('visibilitychange',()=>{if(document.hidden)save()});
+ function makeStars(){const sc=$('scene');for(let i=0;i<110;i++){const d=document.createElement('i');d.className='st';const s=Math.random()<.12?3:Math.random()<.4?2:1;
+  d.style.cssText='left:'+(Math.random()*100)+'%;top:'+(Math.random()*78)+'%;width:'+s+'px;height:'+s+'px;animation-duration:'+(2+Math.random()*4).toFixed(1)+'s;animation-delay:-'+(Math.random()*5).toFixed(1)+'s';sc.appendChild(d)}}
+ makeStars();
+ render();setInterval(tick,100);setInterval(save,30000)}
+if(typeof window==='undefined'||!window.SIM)boot();
+</script>
+</body>
+</html>
